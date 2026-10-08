@@ -1,0 +1,110 @@
+#### Variables
+
+#### Display setup
+display depthcue   off
+axes location off
+display resize 1080 900
+
+#### Functions
+proc adj_bonds {args} {
+  mol bondsrecalc [lindex $args 1]
+}
+
+proc bonds_recalc_on {} {
+  trace add variable ::vmd_frame write adj_bonds
+}
+
+proc bonds_recalc_off {} {
+  trace remove variable ::vmd_frame write adj_bonds
+}
+
+proc form_labels {} {
+  for {set l 0} {$l < [llength [label list Atoms]]} {incr l} {
+  label textformat Atoms $l %a%1i}
+}
+
+proc add_label {id} {
+  set nr [molinfo top]
+  label add Atoms $nr/[expr $id-1]
+  form_labels
+}
+
+proc add_labels {list} {
+  foreach i $list {add_label $i}
+}
+
+proc load {file} {
+
+  bonds_recalc_off
+  mol new $file type xyz waitfor all; mol rename top $file
+  animate goto 0
+  bonds_recalc_on
+  helpme
+}
+
+proc time_frame {id coord frame} {
+  graphics $id delete all
+  graphics $id color white
+  set time [format "%.3f" [expr {($frame +1) * 40 * 2.41888e-5}]]
+  graphics $id text $coord "Time: $time ps" size 1.5 thickness 3
+}
+
+proc time_top {} {
+  set mol_id [molinfo top]
+  set file [molinfo top get name]
+  mol new
+  set time_id [molinfo top]
+  mol rename $time_id "time-$file"
+  mol fix $time_id
+  trace add variable ::vmd_frame write [list apply {{mid tid args} {
+    set coordinates {0.8 -1.3 0.0}
+    set frame [molinfo $mid get frame]
+    time_frame $tid $coordinates $frame
+  }} $mol_id $time_id]
+
+  mol top $mol_id
+}
+
+proc coords {id arg} {
+  graphics $id color white; graphics $id text $arg "$arg"
+}
+
+#### SCENE
+proc scene_work {} {
+  color Name {C} green
+  mol representation Lines 3.000000
+}
+
+####
+
+proc helpme {} {
+  puts "------------------------------------------------------------------------------"
+  puts "Custom Functions:"
+  puts "  load path/to/xyz ---> Loads .xyz file."
+  puts "  timer_top        ---> Creates a timer for the top molecule."
+  puts "  add_labels {IDs} ---> Labels specified atoms."
+  puts "  form_labels      ---> Formats labels."
+  puts "  coords id {coor} ---> Displays text with the given coordinates for graphics."
+  puts "  helpme           ---> Prints this help message."
+  puts "------------------------------------------------------------------------------"
+}
+
+proc saluteme {} {
+  puts "---------------------------------------------"
+  puts "VMD template with minimal working parameters."
+  puts "Created:  November 2025"
+  puts "Last update: April 2026"
+  puts "                                  Enjoy!"
+  puts "                              ~ L. Alvarez ~"
+}
+
+#### Start
+
+scene_work
+puts ""
+puts ""
+#helpme
+saluteme
+helpme
+puts ""
+

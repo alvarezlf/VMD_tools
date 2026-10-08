@@ -1,0 +1,89 @@
+#!/usr/local/bin/vmd
+# VMD script written by save_state $Revision: 1.47 $
+# VMD version: 1.9.3
+
+#set main bp3-a-a-main.xyz
+#set solvent bp3-a-a-side.xyz
+
+set main c3-main.xyz
+set solvent c3-side.xyz
+set firstframe 0
+set lastframe 3999
+#set firstframe 0
+#set lastframe -1
+
+# Display settings
+display projection   Perspective
+display depthcue   off
+display shadows off
+display ambientocclusion off
+axes location off
+display backgroundgradient on
+display resize 1080 900
+
+color Display {BackgroundTop} white
+color Display {BackgroundBot} cyan3
+color Name {C} gray
+
+color Labels {Atoms} black
+label textsize 1
+label textthickness 2
+
+# Functions
+# FORMAT LABELS
+proc form_labels {} {
+for {set l 0} {$l < [llength [label list Atoms]]} {incr l} {label textformat Atoms $l %a%1i}
+}
+
+proc add_label {id} {
+set nr [molinfo top]
+label add Atoms $nr/[expr $id-1]
+form_labels
+}
+
+proc add_labels {list} {
+foreach i $list {add_label $i}
+}
+
+# Render
+proc gen_movie {first_step last_step} {
+    for {set i $first_step} {$i <= $last_step} {incr i 1} {
+        animate goto $i
+        set 5di [format "%05d" $i]
+        render TachyonInternal "frame_$5di.png"
+    }
+}
+
+
+# Main 
+mol new $main type xyz first $firstframe last $lastframe step 1 filebonds 1 autobonds 1 waitfor all
+mol delrep 0 top
+mol representation CPK 1.000000 0.300000 22.000000 12.000000
+mol color Name
+mol selection {all}
+mol material AOChalky
+mol addrep top
+mol rename top main
+
+# Solvent
+mol new $solvent type xyz first $firstframe last $lastframe step 1 filebonds 1 autobonds 1 waitfor all
+mol delrep 0 top
+mol representation QuickSurf 1.0 1.0 0.5 3.0
+mol color ColorID 22
+mol selection {all}
+mol material GlassBubble
+mol addrep top
+mol rename top solvent
+
+# Done with molecules
+mol top 0
+animate goto 0
+display rendermode GLSL
+add_labels {40 11 25 29 43 38 11 4 13 26 21}
+
+# Bonds
+proc adj_bonds {args} {mol bondsrecalc [lindex $args 1]}; trace add variable ::vmd_frame write adj_bonds
+
+####
+puts "Use command 'gen_movie first_step last_step' to render movie"
+
