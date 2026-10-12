@@ -1,6 +1,5 @@
 #!/usr/local/bin/vmd
-# Written by L. Alvarez
-# Have a nice day~
+# Written by L. Alvarez~
 
 #### Display settings 
 #display projection Perspective
@@ -64,7 +63,7 @@ proc load_files {file_traj} {
   animate goto 0 
   update_bonds on
 }
-
+  
 # get_display
 proc get_display {} {
   global sf
@@ -127,13 +126,20 @@ render snapshot $outname
 }
 }
 
-# Format labels
-
-proc form_label {} {
+# Labels
+proc form_labels {} {
   for {set l 0} {$l < [llength [label list Atoms]]} {incr l} {
-  label textformat Atoms $l %a%1i
+  label textformat Atoms $l %a%1i}
 }
+
+proc add_label {id} {
+  set nr [molinfo top]
+  label add Atoms $nr/[expr $id-1]
+  form_labels
 }
+
+proc add_labels {list} {
+  foreach i $list {add_label $i}}
 
 # Window
 proc savePOV {POV_file} {
@@ -147,6 +153,28 @@ proc loadPOV {POV_file} {
   gen_display [gets $POV_value]
   close $POV_value
   puts "Point of view loaded from $POV_file"
+}
+
+# Help
+proc helpme {} {
+  puts "------------------------------------------------------------------------------"
+  puts "Custom Functions:"
+  puts "  load path/to/xyz ---> Loads .xyz file."
+  puts "  timer_top        ---> Creates a timer for the top molecule."
+  puts "  add_labels {IDs} ---> Labels specified atoms."
+  puts "  form_labels      ---> Formats labels."
+  puts "  coords id {coor} ---> Displays text with the given coordinates for graphics."
+  puts "  helpme           ---> Prints this help message."
+  puts "------------------------------------------------------------------------------"
+}
+
+proc greetings {} {
+  puts "---------------------------------------------"
+  puts "VMD template with minimal working parameters."
+  puts "Created:  November 2025"
+  puts "Last update: October 2026"
+  puts "                                  Enjoy!"
+  puts "                              ~ L. Alvarez ~"
 }
 
 set wwh 20
@@ -186,5 +214,7 @@ proc gen_dialog {} {
 }
 
 #set f_pattern "Cube files"
-gen_dialog
 
+greetings
+helpme
+gen_dialog
