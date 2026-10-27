@@ -211,14 +211,22 @@ proc gen_dialog {} {
   button .custom_dialog.pov_load -text "Load" -command {loadPOV $pov_load_name}
   grid .custom_dialog.pov_load -row 2 -column 2 -sticky ew
 
+  label .custom_dialog.labels_label -text "Quick label:"
+  grid .custom_dialog.labels_label -row 3 -column 0 -sticky ew
+  entry .custom_dialog.labels_name -width $wwh -textvariable labels_list
+  grid .custom_dialog.labels_name -row 3 -column 1 -sticky ew
+  button .custom_dialog.labels_button -text "Add" -command {add_labels [split $labels_list " "]}
+  grid .custom_dialog.labels_button -row 3 -column 2 -sticky ew
+
   button .custom_dialog.flabels -text "Format labels" -command {form_labels}
-  grid .custom_dialog.flabels -row 3 -column 0 -sticky ew
-
+  grid .custom_dialog.flabels -row 4 -column 0 -sticky ew
   button .custom_dialog.disp_time -text "Display time" -command {time_top}
-  grid .custom_dialog.disp_time -row 3 -column 1 -sticky ew
-
+  grid .custom_dialog.disp_time -row 4 -column 1 -sticky ew
   button .custom_dialog.gen_movie -text "Render!" -command {gen_movie}
-  grid .custom_dialog.gen_movie -row 3 -column 2 -sticky ew
+  grid .custom_dialog.gen_movie -row 4 -column 2 -sticky ew
+
+#  button .custom_dialog.gen_movie -text "Render!" -command {gen_movie}
+#  grid .custom_dialog.gen_movie -row 3 -column 1 -columnspan 2 -sticky ew
 }
 
 #set f_pattern "Cube files"
@@ -273,6 +281,7 @@ proc helpme {} {
   puts "  time_top         ---> Creates a timer for the top molecule."
   puts "  add_labels {IDs} ---> Labels specified atoms."
   puts "  form_labels      ---> Formats labels."
+#  puts "  coords id {coor} ---> Displays text with the given coordinates for graphics."
   puts "  helpme           ---> Prints this help message."
   puts "------------------------------------------------------------------------------"
 }
