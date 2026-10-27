@@ -2,8 +2,8 @@
 # Written by L. Alvarez~
 
 #### Display settings 
-#display projection Perspective
-display projection Orthographic
+display projection Perspective
+#display projection Orthographic
 display rendermode GLSL
 color Display {Background} white
 #display backgroundgradient on
@@ -25,7 +25,14 @@ label textthickness 2
 
 #### UPDATE BONDS
 proc adj_bonds {args} {mol bondsrecalc [lindex $args 1]}
-trace add variable ::vmd_frame write adj_bonds
+proc update_bonds {state} {
+  switch -- $state {
+    on  { trace add variable ::vmd_frame write adj_bonds }
+    off { trace remove variable ::vmd_frame write adj_bonds }
+    default { puts "update_bonds: expected 'on' or 'off', got '$state'" }
+    }
+}
+update_bonds on
 
 #### Global variables
 set sf []
@@ -34,8 +41,9 @@ set traj_len 1
 
 #### FUNCTIONS ####
 #Load files
-proc load_files {file_traj} {
-  mol delete all
+proc load_file {file_traj} {
+#  mol delete all
+  update_bonds off
   global sf
   global traj_len
 
@@ -51,6 +59,31 @@ proc load_files {file_traj} {
   set sf [lindex [lindex [lindex [molinfo top get scale_matrix] 0] 0] 0]
   set traj_len [molinfo top get frame]
   animate goto 0 
+  update_bonds on
+}
+
+# Display time
+proc time_frame {id coord frame} {
+  graphics $id delete all
+  graphics $id color black
+  set time [format "%.3f" [expr {$frame * 40 * 2.41888e-5}]]
+  graphics $id text $coord "Time: $time ps" size 1.5 thickness 2
+}
+
+proc time_top {} {
+  set mol_id [molinfo top]
+  set file [molinfo top get name]
+  mol new
+  set time_id [molinfo top]
+  mol rename $time_id "time-$file"
+  mol fix $time_id
+  trace add variable ::vmd_frame write [list apply {{mid tid args} {
+    set coordinates {0.8 -1.3 0.0}
+    set frame [molinfo $mid get frame]
+    time_frame $tid $coordinates $frame
+  }} $mol_id $time_id]
+  mol top $mol_id
+  animate goto 0
 }
 
 # get_display
@@ -120,10 +153,19 @@ render TachyonInternal $outname
 
 # Format labels
 
-proc form_label {} {
+proc form_labels {} {
   for {set l 0} {$l < [llength [label list Atoms]]} {incr l} {
-  label textformat Atoms $l %a%1i
+  label textformat Atoms $l %a%1i}
 }
+
+proc add_label {id} {
+  set nr [molinfo top]
+  label add Atoms $nr/[expr $id-1]
+  form_labels
+}
+
+proc add_labels {list} {
+  foreach i $list {add_label $i}
 }
 
 # Window
@@ -152,8 +194,8 @@ proc gen_dialog {} {
   grid .custom_dialog.traj_label -row 0 -column 0 -sticky ew
   entry .custom_dialog.traj_entry -width $wwh -textvariable traj_file
   grid .custom_dialog.traj_entry -row 0 -column 1 -sticky ew
-  button .custom_dialog.load_files -text "Load file" -command {load_files $traj_file}
-  grid .custom_dialog.load_files -row 0 -column 2 -sticky ew
+  button .custom_dialog.load_file -text "Load file" -command {load_file $traj_file}
+  grid .custom_dialog.load_file -row 0 -column 2 -sticky ew
 
   label .custom_dialog.povs_label -text "Save POV File:"
   grid .custom_dialog.povs_label -row 1 -column 0 -sticky ew
@@ -169,15 +211,17 @@ proc gen_dialog {} {
   button .custom_dialog.pov_load -text "Load" -command {loadPOV $pov_load_name}
   grid .custom_dialog.pov_load -row 2 -column 2 -sticky ew
 
-  button .custom_dialog.flabels -text "Format labels" -command {form_label}
-  grid .custom_dialog.flabels -row 3 -column 0 -columnspan 1 -sticky ew
+  button .custom_dialog.flabels -text "Format labels" -command {form_labels}
+  grid .custom_dialog.flabels -row 3 -column 0 -sticky ew
+
+  button .custom_dialog.disp_time -text "Display time" -command {time_top}
+  grid .custom_dialog.disp_time -row 3 -column 1 -sticky ew
 
   button .custom_dialog.gen_movie -text "Render!" -command {gen_movie}
-  grid .custom_dialog.gen_movie -row 3 -column 1 -columnspan 2 -sticky ew
+  grid .custom_dialog.gen_movie -row 3 -column 2 -sticky ew
 }
 
 #set f_pattern "Cube files"
-#gen_dialog
 
 ###########################
 
@@ -222,6 +266,34 @@ proc create_gui {} {
     pack .main.nb.xyz.button -padx 10 -pady 10
 }
 
-# Start the GUI
-create_gui
+proc helpme {} {
+  puts "------------------------------------------------------------------------------"
+  puts "Custom Functions:"
+  puts "  load_file path/to/xyz ---> Loads .xyz file."
+  puts "  time_top         ---> Creates a timer for the top molecule."
+  puts "  add_labels {IDs} ---> Labels specified atoms."
+  puts "  form_labels      ---> Formats labels."
+  puts "  helpme           ---> Prints this help message."
+  puts "------------------------------------------------------------------------------"
+}
 
+proc greeting {} {
+  puts "---------------------------------------------"
+  puts "VMD template with minimal working parameters."
+  puts "Created:  November 2025"
+  puts "Last update: October 2026"
+  puts "                                  Enjoy!"
+  puts "                              ~ L. Alvarez ~"
+}
+
+#### Start
+# Start the GUI
+#create_gui
+
+scene_work
+puts ""
+puts ""
+greeting
+helpme
+gen_dialog
+puts ""
